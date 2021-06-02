@@ -1,0 +1,12 @@
+{
+  "db": {
+    "host": "db"
+  },
+  "status": {
+    "allowNewSyncs": false,
+    "message": "Sorry, this particular server is closed for public syncing",
+    "online": true
+  },
+  "maxSyncs": 5242,
+  "maxSyncSize": 5000000
+}
