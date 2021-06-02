@@ -1,19 +1,18 @@
-// tslint:disable:no-empty
-
 import 'jest';
 import { Request } from 'express';
-import * as Config from '../../src/config';
+import { LogLevel } from '../common/enums';
+import * as Utils from '../common/utils';
+import * as Config from '../config';
 import {
-  InvalidSyncIdException,
   NewSyncsForbiddenException,
   NewSyncsLimitExceededException,
   SyncConflictException,
-  UnspecifiedException
-} from '../../src/exception';
-import * as Server from '../../src/server';
-import BookmarksModel, { IBookmarks } from '../models/bookmarks.model';
-import BookmarksService from './bookmarks.service';
-import NewSyncLogsService from './newSyncLogs.service';
+  SyncNotFoundException,
+  UnspecifiedException,
+} from '../exception';
+import { BookmarksModel, IBookmarks } from '../models/bookmarks.model';
+import { BookmarksService } from './bookmarks.service';
+import { NewSyncLogsService } from './newSyncLogs.service';
 
 jest.mock('../models/bookmarks.model');
 jest.mock('./newSyncLogs.service');
@@ -26,7 +25,7 @@ describe('BookmarksService', () => {
 
   beforeEach(() => {
     logMock = jest.fn();
-    jest.spyOn(Server, 'checkServiceAvailability').mockImplementation();
+    jest.spyOn(Utils, 'checkServiceAvailability').mockImplementation();
   });
 
   afterEach(() => {
@@ -35,7 +34,7 @@ describe('BookmarksService', () => {
 
   it('createBookmarks_v1: should return a valid create bookmarks response', async () => {
     const configSettingsTest: Config.IConfigSettings = {
-      dailyNewSyncsLimit: 0
+      dailyNewSyncsLimit: 0,
     };
     jest.spyOn(Config, 'get').mockReturnValue(configSettingsTest);
     jest.spyOn(BookmarksService.prototype, 'isAcceptingNewSyncs').mockResolvedValue(true);
@@ -43,7 +42,7 @@ describe('BookmarksService', () => {
     const lastUpdatedTest = new Date();
     const dbOpResult: IBookmarks = {
       _id: idTest,
-      lastUpdated: lastUpdatedTest
+      lastUpdated: lastUpdatedTest,
     };
     BookmarksModel.prototype.save.mockResolvedValue(dbOpResult);
     const bookmarksService = new BookmarksService(null, logMock);
@@ -57,14 +56,14 @@ describe('BookmarksService', () => {
     jest.spyOn(BookmarksService.prototype, 'isAcceptingNewSyncs').mockResolvedValue(false);
     const bookmarksService = new BookmarksService(null, logMock);
     const req: Partial<Request> = {};
-    await expect(bookmarksService.createBookmarks_v1(bookmarksDataTestVal, req as Request))
-      .rejects
-      .toThrow(NewSyncsForbiddenException);
+    await expect(bookmarksService.createBookmarks_v1(bookmarksDataTestVal, req as Request)).rejects.toThrow(
+      NewSyncsForbiddenException
+    );
   });
 
   it('createBookmarks_v1: should throw a NewSyncsLimitExceededException if daily new syncs limit has been hit', async () => {
     const configSettingsTest: Config.IConfigSettings = {
-      dailyNewSyncsLimit: 1
+      dailyNewSyncsLimit: 1,
     };
     jest.spyOn(Config, 'get').mockReturnValue(configSettingsTest);
     jest.spyOn(NewSyncLogsService.prototype, 'newSyncsLimitHit').mockResolvedValue(true);
@@ -72,14 +71,14 @@ describe('BookmarksService', () => {
     jest.spyOn(BookmarksService.prototype, 'isAcceptingNewSyncs').mockResolvedValue(true);
     const bookmarksService = new BookmarksService(newSyncLogsService, logMock);
     const req: Partial<Request> = {};
-    await expect(bookmarksService.createBookmarks_v1(bookmarksDataTestVal, req as Request))
-      .rejects
-      .toThrow(NewSyncsLimitExceededException);
+    await expect(bookmarksService.createBookmarks_v1(bookmarksDataTestVal, req as Request)).rejects.toThrow(
+      NewSyncsLimitExceededException
+    );
   });
 
   it('createBookmarks_v1: should add a new sync log if daily new syncs limit is enabled', async () => {
     const configSettingsTest: Config.IConfigSettings = {
-      dailyNewSyncsLimit: 1
+      dailyNewSyncsLimit: 1,
     };
     jest.spyOn(Config, 'get').mockReturnValue(configSettingsTest);
     jest.spyOn(NewSyncLogsService.prototype, 'newSyncsLimitHit').mockResolvedValue(false);
@@ -95,7 +94,7 @@ describe('BookmarksService', () => {
 
   it('createBookmarks_v1: should catch and log any error that is encountered before rethrowing', async () => {
     const configSettingsTest: Config.IConfigSettings = {
-      dailyNewSyncsLimit: 1
+      dailyNewSyncsLimit: 1,
     };
     jest.spyOn(Config, 'get').mockReturnValue(configSettingsTest);
     jest.spyOn(NewSyncLogsService.prototype, 'newSyncsLimitHit').mockResolvedValue(false);
@@ -107,15 +106,13 @@ describe('BookmarksService', () => {
       throw errorTest;
     });
     const req: Partial<Request> = {};
-    await expect(bookmarksService.createBookmarks_v1(bookmarksDataTestVal, req as Request))
-      .rejects
-      .toThrow(errorTest);
-    expect(logMock).toHaveBeenCalledWith(Server.LogLevel.Error, expect.any(String), req, errorTest);
+    await expect(bookmarksService.createBookmarks_v1(bookmarksDataTestVal, req as Request)).rejects.toThrow(errorTest);
+    expect(logMock).toHaveBeenCalledWith(LogLevel.Error, expect.any(String), req, errorTest);
   });
 
   it('createBookmarks_v2: should return a valid create bookmarks response', async () => {
     const configSettingsTest: Config.IConfigSettings = {
-      dailyNewSyncsLimit: 0
+      dailyNewSyncsLimit: 0,
     };
     jest.spyOn(Config, 'get').mockReturnValue(configSettingsTest);
     jest.spyOn(NewSyncLogsService.prototype, 'newSyncsLimitHit').mockResolvedValue(false);
@@ -128,7 +125,7 @@ describe('BookmarksService', () => {
     const dbOpResult: IBookmarks = {
       _id: idTest,
       lastUpdated: lastUpdatedTest,
-      version: versionTest
+      version: versionTest,
     };
     jest.spyOn(BookmarksModel.prototype, 'save').mockResolvedValue(dbOpResult);
     const req: Partial<Request> = {};
@@ -142,14 +139,14 @@ describe('BookmarksService', () => {
     jest.spyOn(BookmarksService.prototype, 'isAcceptingNewSyncs').mockResolvedValue(false);
     const bookmarksService = new BookmarksService(null, logMock);
     const req: Partial<Request> = {};
-    await expect(bookmarksService.createBookmarks_v2(syncVersionTestVal, req as Request))
-      .rejects
-      .toThrow(NewSyncsForbiddenException);
+    await expect(bookmarksService.createBookmarks_v2(syncVersionTestVal, req as Request)).rejects.toThrow(
+      NewSyncsForbiddenException
+    );
   });
 
   it('createBookmarks_v2: should throw a NewSyncsLimitExceededException if daily new syncs limit has been hit', async () => {
     const configSettingsTest: Config.IConfigSettings = {
-      dailyNewSyncsLimit: 1
+      dailyNewSyncsLimit: 1,
     };
     jest.spyOn(Config, 'get').mockReturnValue(configSettingsTest);
     jest.spyOn(NewSyncLogsService.prototype, 'newSyncsLimitHit').mockResolvedValue(true);
@@ -157,14 +154,14 @@ describe('BookmarksService', () => {
     jest.spyOn(BookmarksService.prototype, 'isAcceptingNewSyncs').mockResolvedValue(true);
     const bookmarksService = new BookmarksService(newSyncLogsService, logMock);
     const req: Partial<Request> = {};
-    await expect(bookmarksService.createBookmarks_v2(syncVersionTestVal, req as Request))
-      .rejects
-      .toThrow(NewSyncsLimitExceededException);
+    await expect(bookmarksService.createBookmarks_v2(syncVersionTestVal, req as Request)).rejects.toThrow(
+      NewSyncsLimitExceededException
+    );
   });
 
   it('createBookmarks_v2: should add a new sync log if daily new syncs limit is enabled', async () => {
     const configSettingsTest: Config.IConfigSettings = {
-      dailyNewSyncsLimit: 1
+      dailyNewSyncsLimit: 1,
     };
     jest.spyOn(Config, 'get').mockReturnValue(configSettingsTest);
     jest.spyOn(NewSyncLogsService.prototype, 'newSyncsLimitHit').mockResolvedValue(false);
@@ -180,7 +177,7 @@ describe('BookmarksService', () => {
 
   it('createBookmarks_v2: should catch and log any error that is encountered before rethrowing', async () => {
     const configSettingsTest: Config.IConfigSettings = {
-      dailyNewSyncsLimit: 1
+      dailyNewSyncsLimit: 1,
     };
     jest.spyOn(Config, 'get').mockReturnValue(configSettingsTest);
     jest.spyOn(NewSyncLogsService.prototype, 'newSyncsLimitHit').mockResolvedValue(false);
@@ -192,20 +189,18 @@ describe('BookmarksService', () => {
       throw errorTest;
     });
     const req: Partial<Request> = {};
-    await expect(bookmarksService.createBookmarks_v2(syncVersionTestVal, req as Request))
-      .rejects
-      .toThrow(errorTest);
-    expect(logMock).toHaveBeenCalledWith(Server.LogLevel.Error, expect.any(String), req, errorTest);
+    await expect(bookmarksService.createBookmarks_v2(syncVersionTestVal, req as Request)).rejects.toThrow(errorTest);
+    expect(logMock).toHaveBeenCalledWith(LogLevel.Error, expect.any(String), req, errorTest);
   });
 
   it('getBookmarks: should return bookmarks data', async () => {
     const dbOpResult: IBookmarks = {
       bookmarks: bookmarksDataTestVal,
       lastUpdated: createdDateTestVal,
-      version: syncVersionTestVal
+      version: syncVersionTestVal,
     };
     const findOneAndUpdateMock = jest.spyOn(BookmarksModel, 'findOneAndUpdate').mockReturnValue({
-      exec: () => Promise.resolve(dbOpResult)
+      exec: () => Promise.resolve(dbOpResult),
     } as any);
     const bookmarksService = new BookmarksService(null, logMock);
     const req: Partial<Request> = {};
@@ -216,49 +211,43 @@ describe('BookmarksService', () => {
     expect(bookmarksSync.lastUpdated).toStrictEqual(createdDateTestVal);
   });
 
-  it('getBookmarks: should throw a InvalidSyncIdException db operation returns null', async () => {
+  it('getBookmarks: should throw a SyncNotFoundException if db operation returns null', async () => {
     jest.spyOn(BookmarksModel, 'findOneAndUpdate').mockReturnValue({
-      exec: () => Promise.resolve(null)
+      exec: () => Promise.resolve(null),
     } as any);
     const bookmarksService = new BookmarksService(null, logMock);
     const req: Partial<Request> = {};
-    await expect(bookmarksService.getBookmarks(null, req as Request))
-      .rejects
-      .toThrow(InvalidSyncIdException);
+    await expect(bookmarksService.getBookmarks(null, req as Request)).rejects.toThrow(SyncNotFoundException);
   });
 
-  it('getBookmarks: should log errors that are not InvalidSyncIdException', async () => {
+  it('getBookmarks: should log errors that are not SyncNotFoundException', async () => {
     const errorTest = new Error();
     jest.spyOn(BookmarksModel, 'findOneAndUpdate').mockImplementation(() => {
       throw errorTest;
     });
     const bookmarksService = new BookmarksService(null, logMock);
     const req: Partial<Request> = {};
-    await expect(bookmarksService.getBookmarks(null, req as Request))
-      .rejects
-      .toThrow(errorTest);
-    expect(logMock).toHaveBeenCalledWith(Server.LogLevel.Error, expect.any(String), req, errorTest);
+    await expect(bookmarksService.getBookmarks(null, req as Request)).rejects.toThrow(errorTest);
+    expect(logMock).toHaveBeenCalledWith(LogLevel.Error, expect.any(String), req, errorTest);
   });
 
-  it('getBookmarks: should not log errors that are InvalidSyncIdException', async () => {
-    const errorTest = new InvalidSyncIdException();
+  it('getBookmarks: should not log errors that are SyncNotFoundException', async () => {
+    const errorTest = new SyncNotFoundException();
     jest.spyOn(BookmarksModel, 'findOneAndUpdate').mockImplementation(() => {
       throw errorTest;
     });
     const bookmarksService = new BookmarksService(null, logMock);
     const req: Partial<Request> = {};
-    await expect(bookmarksService.getBookmarks(null, req as Request))
-      .rejects
-      .toThrow(errorTest);
+    await expect(bookmarksService.getBookmarks(null, req as Request)).rejects.toThrow(errorTest);
     expect(logMock).not.toHaveBeenCalled();
   });
 
   it('getLastUpdated: should return bookmarks last updated date', async () => {
     const dbOpResult: IBookmarks = {
-      lastUpdated: createdDateTestVal
+      lastUpdated: createdDateTestVal,
     };
     const findOneAndUpdateMock = jest.spyOn(BookmarksModel, 'findOneAndUpdate').mockReturnValue({
-      exec: () => Promise.resolve(dbOpResult)
+      exec: () => Promise.resolve(dbOpResult),
     } as any);
     const bookmarksService = new BookmarksService(null, logMock);
     const req: Partial<Request> = {};
@@ -267,49 +256,43 @@ describe('BookmarksService', () => {
     expect(bookmarksSync.lastUpdated).toStrictEqual(createdDateTestVal);
   });
 
-  it('getLastUpdated: should throw a InvalidSyncIdException db operation returns null', async () => {
+  it('getLastUpdated: should throw a SyncNotFoundException if db operation returns null', async () => {
     jest.spyOn(BookmarksModel, 'findOneAndUpdate').mockReturnValue({
-      exec: () => Promise.resolve(null)
+      exec: () => Promise.resolve(null),
     } as any);
     const bookmarksService = new BookmarksService(null, logMock);
     const req: Partial<Request> = {};
-    await expect(bookmarksService.getLastUpdated(null, req as Request))
-      .rejects
-      .toThrow(InvalidSyncIdException);
+    await expect(bookmarksService.getLastUpdated(null, req as Request)).rejects.toThrow(SyncNotFoundException);
   });
 
-  it('getLastUpdated: should log errors that are not InvalidSyncIdException', async () => {
+  it('getLastUpdated: should log errors that are not SyncNotFoundException', async () => {
     const errorTest = new Error();
     jest.spyOn(BookmarksModel, 'findOneAndUpdate').mockImplementation(() => {
       throw errorTest;
     });
     const bookmarksService = new BookmarksService(null, logMock);
     const req: Partial<Request> = {};
-    await expect(bookmarksService.getLastUpdated(null, req as Request))
-      .rejects
-      .toThrow(errorTest);
-    expect(logMock).toHaveBeenCalledWith(Server.LogLevel.Error, expect.any(String), req, errorTest);
+    await expect(bookmarksService.getLastUpdated(null, req as Request)).rejects.toThrow(errorTest);
+    expect(logMock).toHaveBeenCalledWith(LogLevel.Error, expect.any(String), req, errorTest);
   });
 
-  it('getLastUpdated: should not log errors that are InvalidSyncIdException', async () => {
-    const errorTest = new InvalidSyncIdException();
+  it('getLastUpdated: should not log errors that are SyncNotFoundException', async () => {
+    const errorTest = new SyncNotFoundException();
     jest.spyOn(BookmarksModel, 'findOneAndUpdate').mockImplementation(() => {
       throw errorTest;
     });
     const bookmarksService = new BookmarksService(null, logMock);
     const req: Partial<Request> = {};
-    await expect(bookmarksService.getLastUpdated(null, req as Request))
-      .rejects
-      .toThrow(errorTest);
+    await expect(bookmarksService.getLastUpdated(null, req as Request)).rejects.toThrow(errorTest);
     expect(logMock).not.toHaveBeenCalled();
   });
 
   it('getVersion: should return bookmarks sync version', async () => {
     const dbOpResult: IBookmarks = {
-      version: syncVersionTestVal
+      version: syncVersionTestVal,
     };
     const findOneAndUpdateMock = jest.spyOn(BookmarksModel, 'findOneAndUpdate').mockReturnValue({
-      exec: () => Promise.resolve(dbOpResult)
+      exec: () => Promise.resolve(dbOpResult),
     } as any);
     const bookmarksService = new BookmarksService(null, logMock);
     const req: Partial<Request> = {};
@@ -318,48 +301,42 @@ describe('BookmarksService', () => {
     expect(bookmarksSync.version).toStrictEqual(syncVersionTestVal);
   });
 
-  it('getVersion: should throw a InvalidSyncIdException db operation returns null', async () => {
+  it('getVersion: should throw a SyncNotFoundException db operation returns null', async () => {
     jest.spyOn(BookmarksModel, 'findOneAndUpdate').mockReturnValue({
-      exec: () => Promise.resolve(null)
+      exec: () => Promise.resolve(null),
     } as any);
     const bookmarksService = new BookmarksService(null, logMock);
     const req: Partial<Request> = {};
-    await expect(bookmarksService.getVersion(null, req as Request))
-      .rejects
-      .toThrow(InvalidSyncIdException);
+    await expect(bookmarksService.getVersion(null, req as Request)).rejects.toThrow(SyncNotFoundException);
   });
 
-  it('getVersion: should log errors that are not InvalidSyncIdException', async () => {
+  it('getVersion: should log errors that are not SyncNotFoundException', async () => {
     const errorTest = new Error();
     jest.spyOn(BookmarksModel, 'findOneAndUpdate').mockImplementation(() => {
       throw errorTest;
     });
     const bookmarksService = new BookmarksService(null, logMock);
     const req: Partial<Request> = {};
-    await expect(bookmarksService.getVersion(null, req as Request))
-      .rejects
-      .toThrow(errorTest);
-    expect(logMock).toHaveBeenCalledWith(Server.LogLevel.Error, expect.any(String), req, errorTest);
+    await expect(bookmarksService.getVersion(null, req as Request)).rejects.toThrow(errorTest);
+    expect(logMock).toHaveBeenCalledWith(LogLevel.Error, expect.any(String), req, errorTest);
   });
 
-  it('getVersion: should not log errors that are InvalidSyncIdException', async () => {
-    const errorTest = new InvalidSyncIdException();
+  it('getVersion: should not log errors that are SyncNotFoundException', async () => {
+    const errorTest = new SyncNotFoundException();
     jest.spyOn(BookmarksModel, 'findOneAndUpdate').mockImplementation(() => {
       throw errorTest;
     });
     const bookmarksService = new BookmarksService(null, logMock);
     const req: Partial<Request> = {};
-    await expect(bookmarksService.getVersion(null, req as Request))
-      .rejects
-      .toThrow(errorTest);
+    await expect(bookmarksService.getVersion(null, req as Request)).rejects.toThrow(errorTest);
     expect(logMock).not.toHaveBeenCalled();
   });
 
   it('isAcceptingNewSyncs: should return false if service is not accepting new syncs', async () => {
     const configSettingsTest: Config.IConfigSettings = {
       status: {
-        allowNewSyncs: false
-      }
+        allowNewSyncs: false,
+      },
     };
     jest.spyOn(Config, 'get').mockReturnValue(configSettingsTest);
     const bookmarksService = new BookmarksService(null, logMock);
@@ -371,8 +348,8 @@ describe('BookmarksService', () => {
     const configSettingsTest: Config.IConfigSettings = {
       maxSyncs: 0,
       status: {
-        allowNewSyncs: true
-      }
+        allowNewSyncs: true,
+      },
     };
     jest.spyOn(Config, 'get').mockReturnValue(configSettingsTest);
     const bookmarksService = new BookmarksService(null, logMock);
@@ -384,8 +361,8 @@ describe('BookmarksService', () => {
     const configSettingsTest: Config.IConfigSettings = {
       maxSyncs: 1,
       status: {
-        allowNewSyncs: true
-      }
+        allowNewSyncs: true,
+      },
     };
     jest.spyOn(Config, 'get').mockReturnValue(configSettingsTest);
     jest.spyOn(BookmarksService.prototype, 'getBookmarksCount').mockResolvedValue(0);
@@ -398,8 +375,8 @@ describe('BookmarksService', () => {
     const configSettingsTest: Config.IConfigSettings = {
       maxSyncs: 1,
       status: {
-        allowNewSyncs: true
-      }
+        allowNewSyncs: true,
+      },
     };
     jest.spyOn(Config, 'get').mockReturnValue(configSettingsTest);
     jest.spyOn(BookmarksService.prototype, 'getBookmarksCount').mockResolvedValue(1);
@@ -410,10 +387,10 @@ describe('BookmarksService', () => {
 
   it('updateBookmarks_v1: should return updated date in response when updated bookmarks', async () => {
     const dbOpResult: IBookmarks = {
-      lastUpdated: createdDateTestVal
+      lastUpdated: createdDateTestVal,
     };
     const findOneAndUpdateMock = jest.spyOn(BookmarksModel, 'findOneAndUpdate').mockReturnValue({
-      exec: () => Promise.resolve(dbOpResult)
+      exec: () => Promise.resolve(dbOpResult),
     } as any);
     const bookmarksService = new BookmarksService(null, logMock);
     const req: Partial<Request> = {};
@@ -424,7 +401,7 @@ describe('BookmarksService', () => {
 
   it('updateBookmarks_v1: should not return updated date in response if no bookmarks were updated', async () => {
     const findOneAndUpdateMock = jest.spyOn(BookmarksModel, 'findOneAndUpdate').mockReturnValue({
-      exec: () => Promise.resolve(null)
+      exec: () => Promise.resolve(null),
     } as any);
     const bookmarksService = new BookmarksService(null, logMock);
     const req: Partial<Request> = {};
@@ -440,42 +417,48 @@ describe('BookmarksService', () => {
     });
     const bookmarksService = new BookmarksService(null, logMock);
     const req: Partial<Request> = {};
-    await expect(bookmarksService.updateBookmarks_v1(null, bookmarksDataTestVal, req as Request))
-      .rejects
-      .toThrow(errorTest);
-    expect(logMock).toHaveBeenCalledWith(Server.LogLevel.Error, expect.any(String), req, errorTest);
+    await expect(bookmarksService.updateBookmarks_v1(null, bookmarksDataTestVal, req as Request)).rejects.toThrow(
+      errorTest
+    );
+    expect(logMock).toHaveBeenCalledWith(LogLevel.Error, expect.any(String), req, errorTest);
   });
 
   it('updateBookmarks_v2: should return updated date in response when updated bookmarks', async () => {
     const dbOpResult: IBookmarks = {
-      lastUpdated: createdDateTestVal
+      lastUpdated: createdDateTestVal,
     };
     const findByIdMock = jest.spyOn(BookmarksModel, 'findById').mockReturnValue({
-      exec: () => Promise.resolve(dbOpResult)
+      exec: () => Promise.resolve(dbOpResult),
     } as any);
     const findOneAndUpdateMock = jest.spyOn(BookmarksModel, 'findOneAndUpdate').mockReturnValue({
-      exec: () => Promise.resolve(dbOpResult)
+      exec: () => Promise.resolve(dbOpResult),
     } as any);
     const bookmarksService = new BookmarksService(null, logMock);
     const req: Partial<Request> = {};
-    const updatedBookmarksSync = await bookmarksService.updateBookmarks_v2(null, bookmarksDataTestVal, null, syncVersionTestVal, req as Request);
+    const updatedBookmarksSync = await bookmarksService.updateBookmarks_v2(
+      null,
+      bookmarksDataTestVal,
+      null,
+      syncVersionTestVal,
+      req as Request
+    );
     expect(findByIdMock).toHaveBeenCalled();
     expect(findOneAndUpdateMock).toHaveBeenCalled();
     expect(updatedBookmarksSync.lastUpdated).toStrictEqual(createdDateTestVal);
   });
 
-  it('updateBookmarks_v2: should sdfsdf return updated date in response when updated bookmarks', async () => {
+  it('updateBookmarks_v2: should return updated date in response when updated bookmarks', async () => {
     const dbOpResult: IBookmarks = {
-      lastUpdated: createdDateTestVal
+      lastUpdated: createdDateTestVal,
     };
     jest.spyOn(BookmarksModel, 'findById').mockReturnValue({
-      exec: () => Promise.resolve(dbOpResult)
+      exec: () => Promise.resolve(dbOpResult),
     } as any);
     let updatePayload: IBookmarks;
     jest.spyOn(BookmarksModel, 'findOneAndUpdate').mockImplementation((...args): any => {
       updatePayload = args[1];
       return {
-        exec: () => Promise.resolve(dbOpResult)
+        exec: () => Promise.resolve(dbOpResult),
       };
     });
     const bookmarksService = new BookmarksService(null, logMock);
@@ -484,63 +467,81 @@ describe('BookmarksService', () => {
     expect(Object.keys(updatePayload)).not.toContain('version');
   });
 
-  it('updateBookmarks_v2: should throw a InvalidSyncIdException if no existing bookmarks found', async () => {
+  it('updateBookmarks_v2: should throw a SyncNotFoundException if no existing bookmarks found', async () => {
     const findByIdMock = jest.spyOn(BookmarksModel, 'findById').mockReturnValue({
-      exec: () => Promise.resolve(null)
+      exec: () => Promise.resolve(null),
     } as any);
     const req: Partial<Request> = {};
     const bookmarksService = new BookmarksService(null, logMock);
-    await expect(bookmarksService.updateBookmarks_v2(null, bookmarksDataTestVal, null, syncVersionTestVal, req as Request))
-      .rejects
-      .toThrow(InvalidSyncIdException);
+    await expect(
+      bookmarksService.updateBookmarks_v2(null, bookmarksDataTestVal, null, syncVersionTestVal, req as Request)
+    ).rejects.toThrow(SyncNotFoundException);
     expect(findByIdMock).toHaveBeenCalled();
   });
 
   it('updateBookmarks_v2: should throw a SyncConflictException if supplied last updated value does not match existing bookmarks', async () => {
     const dbOpResult: IBookmarks = {
-      lastUpdated: createdDateTestVal
+      lastUpdated: createdDateTestVal,
     };
     const findByIdMock = jest.spyOn(BookmarksModel, 'findById').mockReturnValue({
-      exec: () => Promise.resolve(dbOpResult)
+      exec: () => Promise.resolve(dbOpResult),
     } as any);
     const bookmarksService = new BookmarksService(null, logMock);
     const req: Partial<Request> = {};
-    await expect(bookmarksService.updateBookmarks_v2(null, bookmarksDataTestVal, new Date().toISOString(), syncVersionTestVal, req as Request))
-      .rejects
-      .toThrow(SyncConflictException);
+    await expect(
+      bookmarksService.updateBookmarks_v2(
+        null,
+        bookmarksDataTestVal,
+        new Date().toISOString(),
+        syncVersionTestVal,
+        req as Request
+      )
+    ).rejects.toThrow(SyncConflictException);
     expect(findByIdMock).toHaveBeenCalled();
   });
 
-  it('updateBookmarks_v2: should log errors that are not InvalidSyncIdException', async () => {
+  it('updateBookmarks_v2: should log errors that are not SyncNotFoundException', async () => {
     const errorTest = new Error();
     jest.spyOn(BookmarksModel, 'findById').mockImplementation(() => {
       throw errorTest;
     });
     const bookmarksService = new BookmarksService(null, logMock);
     const req: Partial<Request> = {};
-    await expect(bookmarksService.updateBookmarks_v2(null, bookmarksDataTestVal, new Date().toISOString(), syncVersionTestVal, req as Request))
-      .rejects
-      .toThrow(errorTest);
-    expect(logMock).toHaveBeenCalledWith(Server.LogLevel.Error, expect.any(String), req, errorTest);
+    await expect(
+      bookmarksService.updateBookmarks_v2(
+        null,
+        bookmarksDataTestVal,
+        new Date().toISOString(),
+        syncVersionTestVal,
+        req as Request
+      )
+    ).rejects.toThrow(errorTest);
+    expect(logMock).toHaveBeenCalledWith(LogLevel.Error, expect.any(String), req, errorTest);
   });
 
-  it('updateBookmarks_v2: should not log errors that are InvalidSyncIdException', async () => {
-    const errorTest = new InvalidSyncIdException();
+  it('updateBookmarks_v2: should not log errors that are SyncNotFoundException', async () => {
+    const errorTest = new SyncNotFoundException();
     jest.spyOn(BookmarksModel, 'findById').mockImplementation(() => {
       throw errorTest;
     });
     const bookmarksService = new BookmarksService(null, logMock);
     const req: Partial<Request> = {};
-    await expect(bookmarksService.updateBookmarks_v2(null, bookmarksDataTestVal, new Date().toISOString(), syncVersionTestVal, req as Request))
-      .rejects
-      .toThrow(errorTest);
+    await expect(
+      bookmarksService.updateBookmarks_v2(
+        null,
+        bookmarksDataTestVal,
+        new Date().toISOString(),
+        syncVersionTestVal,
+        req as Request
+      )
+    ).rejects.toThrow(errorTest);
     expect(logMock).not.toHaveBeenCalled();
   });
 
   it('getBookmarksCount: should return bookmarks count', async () => {
     const countTest = 1;
     jest.spyOn(BookmarksModel, 'estimatedDocumentCount').mockReturnValue({
-      exec: () => Promise.resolve(countTest)
+      exec: () => Promise.resolve(countTest),
     } as any);
     const bookmarksService = new BookmarksService(null, logMock);
     const bookmarksCount = await bookmarksService.getBookmarksCount();
@@ -553,20 +554,16 @@ describe('BookmarksService', () => {
       throw errorTest;
     });
     const bookmarksService = new BookmarksService(null, logMock);
-    await expect(bookmarksService.getBookmarksCount())
-      .rejects
-      .toThrow(errorTest);
-    expect(logMock).toHaveBeenCalledWith(Server.LogLevel.Error, expect.any(String), null, errorTest);
+    await expect(bookmarksService.getBookmarksCount()).rejects.toThrow(errorTest);
+    expect(logMock).toHaveBeenCalledWith(LogLevel.Error, expect.any(String), null, errorTest);
   });
 
   it('getBookmarksCount: should log and throw an UnspecifiedException if bookmark count is less than zero', async () => {
     jest.spyOn(BookmarksModel, 'estimatedDocumentCount').mockReturnValue({
-      exec: () => Promise.resolve(-1)
+      exec: () => Promise.resolve(-1),
     } as any);
     const bookmarksService = new BookmarksService(null, logMock);
-    await expect(bookmarksService.getBookmarksCount())
-      .rejects
-      .toThrow(UnspecifiedException);
-    expect(logMock).toHaveBeenCalledWith(Server.LogLevel.Error, expect.any(String), null, expect.any(UnspecifiedException));
+    await expect(bookmarksService.getBookmarksCount()).rejects.toThrow(UnspecifiedException);
+    expect(logMock).toHaveBeenCalledWith(LogLevel.Error, expect.any(String), null, expect.any(UnspecifiedException));
   });
 });

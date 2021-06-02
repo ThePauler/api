@@ -24,7 +24,7 @@ Once you have installed Docker you can use the [xBrowserSync API Docker image](h
 
 ## Manual installation
 
-Whilst running in a Docker container is the recommended way to run your xBrowserSync service, you can 
+Whilst running in a Docker container is the recommended way to run your xBrowserSync service, you can self-host xBrowserSync instead by performing a manual installation on your own server by installing the two dependencies listed as prerequisites and following the six easy steps below:
 
 ### Prerequisites
 
@@ -113,6 +113,7 @@ Config Setting | Description | Default Value
 `db.connTimeout` | The connection timeout period to use for MongoDB. Using a high value helps prevent dropped connections in a hosted environment. | `30000` (30 secs)
 `db.host` | The MongoDB server address to connect to, either a hostname, IP address, or UNIX domain socket. | `127.0.0.1`
 `db.name` | Name of the MongoDB database to use. | `xbrowsersync`
+`db.ssl` | Connect to MongoDB over SSL. | `false`
 `db.useSRV` | Use MongoDB's [DNS Seedlist Connection Format](https://docs.mongodb.com/manual/reference/connection-string/#dns-seedlist-connection-format) to connect to the database. If set to true, `db.host` should also be set to the relevant DNS hostname. | `false`
 `db.username` | Username of the account used to access MongoDB. Set as empty string to use environment variable `XBROWSERSYNC_DB_USER`. | (Empty string, defers to environment variable)
 `db.password` | Password of the account used to access MongoDB. Set as empty string to use environment variable `XBROWSERSYNC_DB_PWD`. | (Empty string, defers to environment variable)
@@ -158,9 +159,7 @@ If you've made code changes you can run a fresh build with the command:
 
 ## Testing
 
-To run unit/integration tests, run the following command:
-
-    $ npm run test
+The project includes unit, integration and end to end tests.
 
 To run end to end tests, you will need to create the test database first. Run the following commands in the mongo shell:
 
@@ -173,7 +172,7 @@ To run end to end tests, you will need to create the test database first. Run th
 
 You can then run the end to end tests by running the following command:
 
-    $ npm run e2etests
+    $ npm run test
 
 ## Upgrading from an earlier version
 
@@ -212,6 +211,12 @@ Once you've upgraded and completed the installation steps below, you can import 
   ```
   mongoimport --db xbrowsersync -c bookmarks --file /path/to/export/file
   ```
+
+## Other Implementations
+
+### Google Cloud
+
+- [sbogomolov/xbrowsersync-gcf](https://github.com/sbogomolov/xbrowsersync-gcf): An implementation of the xBrowserSync API using Google Cloud Functions with Firestore backend.
 
 ## VS Code
 
