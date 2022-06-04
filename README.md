@@ -1,7 +1,7 @@
 # xBrowserSync
 ## API service
 
-[![Build Status](https://travis-ci.org/xbrowsersync/api.svg)](https://travis-ci.org/xbrowsersync/api) [![Coverage Status](https://coveralls.io/repos/github/xbrowsersync/api/badge.svg?branch=master)](https://coveralls.io/github/xbrowsersync/api?branch=master) [![Dependencies](https://david-dm.org/xbrowsersync/api/status.svg)](https://david-dm.org/xbrowsersync/api) [![Dev Dependencies](https://david-dm.org/xbrowsersync/api/dev-status.svg)](https://david-dm.org/xbrowsersync/api?type=dev) [![Known Vulnerabilities](https://snyk.io/test/github/xbrowsersync/api/badge.svg?targetFile=package.json)](https://snyk.io/test/github/xbrowsersync/api?targetFile=package.json) [![GitHub license](https://img.shields.io/github/license/xbrowsersync/api.svg)](https://github.com/xbrowsersync/api/blob/master/LICENSE.md) [![Liberapay patrons](http://img.shields.io/liberapay/patrons/xbrowsersync.svg?logo=liberapay)](https://liberapay.com/xbrowsersync/donate)
+[![Build Status](https://travis-ci.org/xbrowsersync/api.svg)](https://travis-ci.org/xbrowsersync/api) [![Coverage Status](https://coveralls.io/repos/github/xbrowsersync/api/badge.svg?branch=master)](https://coveralls.io/github/xbrowsersync/api?branch=master) ![Dependencies](https://img.shields.io/depfu/xbrowsersync/api) [![Known Vulnerabilities](https://snyk.io/test/github/xbrowsersync/api/badge.svg?targetFile=package.json)](https://snyk.io/test/github/xbrowsersync/api?targetFile=package.json) [![GitHub license](https://img.shields.io/github/license/xbrowsersync/api.svg)](https://github.com/xbrowsersync/api/blob/master/LICENSE.md) [![Liberapay patrons](http://img.shields.io/liberapay/patrons/xbrowsersync.svg?logo=liberapay)](https://liberapay.com/xbrowsersync/donate)
 
 [![GitHub stars](https://img.shields.io/github/stars/xbrowsersync/api.svg?style=social&label=Star)](https://github.com/xbrowsersync/api)
 [![GitHub forks](https://img.shields.io/github/forks/xbrowsersync/api.svg?style=social&label=Fork)](https://github.com/xbrowsersync/api/fork)
@@ -217,6 +217,10 @@ Once you've upgraded and completed the installation steps below, you can import 
 ### Google Cloud
 
 - [sbogomolov/xbrowsersync-gcf](https://github.com/sbogomolov/xbrowsersync-gcf): An implementation of the xBrowserSync API using Google Cloud Functions with Firestore backend.
+
+### Cloudflare Worker
+
+- [txchen/xbrowsersync-cfw](https://github.com/txchen/xbrowsersync-cfw): An implementation of the xBrowserSync API using Cloudflare worker and KV.
 
 ## VS Code
 
